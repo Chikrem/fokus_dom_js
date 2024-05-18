@@ -11,47 +11,68 @@
 // O que é apresentado no navegador é uma representação do DOM. O objeto global "document" é uma referência ao HTML e pode ser visto como um nível imediatamente abaixo do DOM, ajudando a interagir com o conteúdo e os elementos da página.
 
 
+//Página
+
 const html = document.querySelector('html');
 
 const focoBT = document.querySelector('.app__card-button--foco');
-
 const longoBT = document.querySelector('.app__card-button--longo');
-
 const curtoBT = document.querySelector('.app__card-button--curto');
+
+//Botões
 
 const startPauseButton = document.getElementById('start-pause');
 const buttonIcon = document.querySelector('.app__card-primary-butto-icon');
 const buttonText = startPauseButton.querySelector('span');
 const botoes = document.querySelectorAll('.app__card-button');
+const musicaFocoInput = document.getElementById('alternar-musica');
 
+//Música
 
+const musica = new Audio('/sons/luna-rise-part-one.mp3');
+const musicaPause = new Audio('/sons/pause.mp3');
+const musicaPlay = new Audio('/sons/play.wav');
+const musicaAlert = new Audio('/sons/beep.mp3');
+musica.loop = true;
 
-
-
-
+//Banner
 
 const displayTempo = document.querySelector('#timer');
 const banner = document.querySelector('.app__image');
 const titulo = document.querySelector('.app__title');
 const tituloStrong = document.querySelector('.app__title-strong');
 
+//Tempo do Timer
 
 const duracaoFoco = 1500; 
 const duracaoDescansoCurto = 300; 
-const duracaoDescansoLongo = 900; 
+const duracaoDescansoLongo = 900;
+let tempoDecorridoEmSegundos = 1500;
+let intervaloId = null;
 
+//Tempo na Tela
+
+const tempoNaTela = document.getElementById('timer');
+
+
+
+
+//Alterar Elementos da Página ao Click do Botão
 
 focoBT.addEventListener('click', function() {
+    tempoDecorridoEmSegundos = 1500;
     alterarContexto('foco');
     focoBT.classList.add('active')
 });
 
 curtoBT.addEventListener('click', function() {
+    tempoDecorridoEmSegundos = 300;
     alterarContexto('descanso-curto');
     curtoBT.classList.add('active')
 });
 
 longoBT.addEventListener('click', function() {
+    tempoDecorridoEmSegundos = 900;
     alterarContexto('descanso-longo');
     longoBT.classList.add('active')
 });
@@ -61,6 +82,7 @@ longoBT.addEventListener('click', function() {
 function alterarContexto (contexto){
     html.setAttribute('data-contexto', contexto);
     banner.setAttribute('src', `/imagens/${contexto}.png`);
+    mostrarTempo();
 
     botoes.forEach(function (contexto) {
         contexto.classList.remove('active')})
@@ -83,17 +105,77 @@ function alterarContexto (contexto){
     }
 }
 
-// Alterando Icone e Texto do Botão Play/Pause
+
+// Play Musica
+
+musicaFocoInput.addEventListener('change', function () {
+        if (musica.paused) {
+            musica.play();
+        } else {
+            musica.pause();
+        }
+    });
+
+
+//Timer
+
+const contagemRegressiva = () => {
+    if(tempoDecorridoEmSegundos <= 0){
+        musicaAlert.play()
+        alert('Tempo finalizado!')
+        zerar()
+        return
+    }
+    tempoDecorridoEmSegundos -= 1
+    mostrarTempo();
+}
+
+function iniciar() {
+
+    if(intervaloId){  
+        musicaPause.play()
+        zerar()
+        return
+    }
+    musicaPlay.play()
+    intervaloId = setInterval(contagemRegressiva, 1000) // Executa o contagemRegressiva varias vezes a cada 1s até tempoDecorridoEmSegundos for igual a 0
+}
+
+function zerar() {
+    clearInterval(intervaloId) 
+    intervaloId = null
+}
+
+
+function mostrarTempo() {
+    const tempo = new Date(tempoDecorridoEmSegundos * 1000)
+    const tempoFormatado = tempo.toLocaleTimeString('pt-Br', {minute: '2-digit', second: '2-digit'}) //toLocaleTimeString nativo do obj Date.
+    tempoNaTela.innerHTML = `${tempoFormatado}`
+}
+
+
+mostrarTempo() //Exibir sempre o tempo na tela
+
+
+
+// startPauseButton.addEventListener('click', iniciar)
+
+// Alterando Icone e Texto do Botão Play/Pause do Timer - Inicia/Pausa Timer
 
 startPauseButton.addEventListener('click', function(){
+
+    iniciar()
+
     if (buttonIcon.getAttribute('src') === '/imagens/play_arrow.png') {
         buttonIcon.setAttribute('src', '/imagens/pause.png');
         buttonText.innerText = 'Pausar';
+        //buttonText.textContent = 'Pausar';
     } 
     
     else {
         buttonIcon.setAttribute('src', '/imagens/play_arrow.png');
         buttonText.innerText = 'Começar';
+        //buttonText.textContent = 'Começar';
     }
 });
 
