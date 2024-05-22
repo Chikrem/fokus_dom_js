@@ -17,6 +17,7 @@ const audioPausa = new Audio('/sons/pause.mp3');
 const audioTempoFinalizado = new Audio('./sons/beep.mp3')
 
 let tempoDecorridoEmSegundos = 30
+
 let intervaloId = null
 
 musica.loop = true
@@ -29,93 +30,116 @@ musicaFocoInput.addEventListener('change', () => {
     }
 })
 
+const temposPorContexto = {
+    'foco': 30,
+    'descanso-curto': 5,
+    'descanso-longo': 15
+};
+
+const contagemRegressiva = () => {
+    if (tempoDecorridoEmSegundos <= 0) {
+        audioTempoFinalizado.play().then(() => {
+            alert('Tempo finalizado!');
+        }).catch(error => {
+            console.error('Erro ao tentar reproduzir o áudio:', error);
+            alert('Tempo finalizado!');
+        });
+
+        const focoAtivo = html.getAttribute('data-contexto');
+        if (focoAtivo) {
+            const evento = new CustomEvent('FocoFinalizado');
+            document.dispatchEvent(evento);
+        }
+
+        // Redefinir o tempo de acordo com o contexto
+        zerar(); // Garantir que zerar é chamado e redefine o tempo corretamente
+        return;
+    }
+    tempoDecorridoEmSegundos -= 1;
+    mostrarTempo();
+};
+
+function atualizarTempo(contexto) {
+    if (temposPorContexto.hasOwnProperty(contexto)) {
+        tempoDecorridoEmSegundos = temposPorContexto[contexto];
+    }
+}
+
 focoBt.addEventListener('click', () => {
-    tempoDecorridoEmSegundos = 30
-    alterarContexto('foco')
-    focoBt.classList.add('active')
-})
+    alterarContexto('foco');
+    focoBt.classList.add('active');
+});
 
 curtoBt.addEventListener('click', () => {
-    tempoDecorridoEmSegundos = 5
-    alterarContexto('descanso-curto')
-    curtoBt.classList.add('active')
-})
+    alterarContexto('descanso-curto');
+    curtoBt.classList.add('active');
+});
 
 longoBt.addEventListener('click', () => {
-    tempoDecorridoEmSegundos = 15
-    alterarContexto('descanso-longo')
-    longoBt.classList.add('active')
-})
+    alterarContexto('descanso-longo');
+    longoBt.classList.add('active');
+});
 
 function alterarContexto(contexto) {
-    mostrarTempo()
-    botoes.forEach(function (contexto){
-        contexto.classList.remove('active')
-    })
-    html.setAttribute('data-contexto', contexto)
-    banner.setAttribute('src', `/imagens/${contexto}.png`)
+    atualizarTempo(contexto);
+    mostrarTempo();
+    botoes.forEach(function (botao){
+        botao.classList.remove('active');
+    });
+    html.setAttribute('data-contexto', contexto);
+    banner.setAttribute('src', `/imagens/${contexto}.png`);
     switch (contexto) {
         case "foco":
             titulo.innerHTML = `
-            Otimize sua produtividade,<br>
+                Otimize sua produtividade,<br>
                 <strong class="app__title-strong">mergulhe no que importa.</strong>
-            `
+            `;
             break;
         case "descanso-curto":
             titulo.innerHTML = `
-            Que tal dar uma respirada? <strong class="app__title-strong">Faça uma pausa curta!</strong>
-            ` 
+                Que tal dar uma respirada? <strong class="app__title-strong">Faça uma pausa curta!</strong>
+            `;
             break;
         case "descanso-longo":
             titulo.innerHTML = `
-            Hora de voltar à superfície.<strong class="app__title-strong"> Faça uma pausa longa.</strong>
-            `
+                Hora de voltar à superfície.<strong class="app__title-strong"> Faça uma pausa longa.</strong>
+            `;
+            break;
         default:
             break;
     }
 }
 
-const contagemRegressiva = () => {
-    if(tempoDecorridoEmSegundos <= 0){
-        audioTempoFinalizado.play()
-        alert('Tempo finalizado!')
-        const focoAtivo = html.getAttribute('data-contexto') == 'foco'
-        if (focoAtivo) {
-            const evento = new CustomEvent('FocoFinalizado')
-            document.dispatchEvent(evento)
-        }
-        zerar()
-        return
-    }
-    tempoDecorridoEmSegundos -= 1
-    mostrarTempo()
-}
-
-startPauseBt.addEventListener('click', iniciarOuPausar)
+startPauseBt.addEventListener('click', iniciarOuPausar);
 
 function iniciarOuPausar() {
-    if(intervaloId){
-        audioPausa.play()
-        zerar()
-        return
+    if (intervaloId) {
+        audioPausa.play();
+        zerar();
+        return;
     }
-    audioPlay.play()
-    intervaloId = setInterval(contagemRegressiva, 1000)
-    iniciarOuPausarBt.textContent = "Pausar"
-    iniciarOuPausarBtIcone.setAttribute('src', `/imagens/pause.png`)
+    audioPlay.play();
+    intervaloId = setInterval(contagemRegressiva, 1000);
+    iniciarOuPausarBt.textContent = "Pausar";
+    iniciarOuPausarBtIcone.setAttribute('src', `/imagens/pause.png`);
 }
 
 function zerar() {
-    clearInterval(intervaloId) 
-    iniciarOuPausarBt.textContent = "Começar"
-    iniciarOuPausarBtIcone.setAttribute('src', `/imagens/play_arrow.png`)
-    intervaloId = null
+    clearInterval(intervaloId);
+    iniciarOuPausarBt.textContent = "Começar";
+    iniciarOuPausarBtIcone.setAttribute('src', `/imagens/play_arrow.png`);
+    intervaloId = null;
+
+    // Redefinir o tempo para o contexto atual ao zerar
+    const contextoAtual = html.getAttribute('data-contexto');
+    atualizarTempo(contextoAtual);
+    mostrarTempo(); // Atualizar a exibição do tempo na tela
 }
 
 function mostrarTempo() {
-    const tempo = new Date(tempoDecorridoEmSegundos * 1000)
-    const tempoFormatado = tempo.toLocaleTimeString('pt-Br', {minute: '2-digit', second: '2-digit'})
-    tempoNaTela.innerHTML = `${tempoFormatado}`
+    const tempo = new Date(tempoDecorridoEmSegundos * 1000);
+    const tempoFormatado = tempo.toLocaleTimeString('pt-BR', { minute: '2-digit', second: '2-digit' });
+    tempoNaTela.innerHTML = `${tempoFormatado}`;
 }
 
-mostrarTempo()
+mostrarTempo();
