@@ -123,9 +123,19 @@ const contagemRegressiva = () => {
     if(tempoDecorridoEmSegundos <= 0){
         musicaAlert.play()
         alert('Tempo finalizado!')
+
+        const focoAtivo = html.getAttribute('data-contexto') == 'foco'
+
+        if (focoAtivo) {
+            const evento = new CustomEvent('FocoFinalizado')  // Se o meu foco está ativo, pegamos o atributo do HTML e vemos se é "foco", criamos um novo evento customizado, CustomEvent, e o nome desse evento customizado é FocoFinalizado. 
+            document.dispatchEvent(evento) // Dispatch desse evento. Agora, outras partes da aplicação Fokus podem ouvir e reagir a esse evento.
+        }
+
         zerar()
         return
+
     }
+
     tempoDecorridoEmSegundos -= 1
     mostrarTempo();
 }
